@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Results | ThyroidGuard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-logo">ThyroidGuard</div>
+            <ul class="navbar-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/">Assessment</a></li>
+                <li><a href="#about">About</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>📊 Assessment Results</h1>
+        <p class="subtitle">Comprehensive thyroid cancer risk analysis completed</p>
+
+        <!-- Primary Diagnosis Card -->
+        <div class="card result-card">
+            <h2>🔬 Primary Diagnosis</h2>
+            <div
+                class="diagnosis-badge {{ 'badge-benign' if assessment.diagnosis == 'Benign' else 'badge-malignant' }}">
+                {{ assessment.diagnosis }}
+            </div>
+            <p style="margin-top: 1.5rem; font-size: 1.125rem;">
+                <strong>Confidence Level:</strong>
+                <span style="color: var(--primary-light); font-size: 1.5rem; font-weight: 700;">
+                    {{ (assessment.confidence * 100) | round(2) }}%
+                </span>
+            </p>
+            <div class="confidence-bar" style="--confidence-width: {{ (assessment.confidence * 100) | round(2) }}%">
+                <div class="confidence-fill" style="width: var(--confidence-width)"></div>
+            </div>
+
+            {% if assessment.diagnosis == 'Benign' %}
+            <p
+                style="margin-top: 1.5rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 12px; border-left: 4px solid var(--accent-benign);">
+                ✓ The assessment indicates a <strong>benign condition</strong>. However, continued monitoring and
+                follow-up with your healthcare provider is recommended.
+            </p>
+            {% else %}
+            <p
+                style="margin-top: 1.5rem; padding: 1rem; background: rgba(239, 68, 68, 0.1); border-radius: 12px; border-left: 4px solid var(--accent-malignant);">
+                ⚠ The assessment suggests <strong>potential malignancy</strong>. Immediate consultation with an
+                oncologist and further diagnostic testing is strongly recommended.
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Patient Phenotype Profile -->
+        <div class="card result-card">
+            <h2>👤 Patient Phenotype Profile</h2>
+            <p style="font-size: 1.125rem; margin-bottom: 1rem;">
+                <strong>Profile Classification:</strong>
+                <span style="color: var(--primary-light);">Cluster {{ assessment.phenotype.id }}</span>
+            </p>
+            <p style="padding: 1rem; background: rgba(59, 130, 246, 0.1); border-radius: 12px; margin-bottom: 1.5rem;">
+                {{ assessment.phenotype.summary }}
+            </p>
+
+            <div class="risk-grid">
+                <div class="risk-card">
+                    <label>Gender</label>
+                    <div>{{ assessment.phenotype.gender }}</div>
+                </div>
+
+                <div class="risk-card">
+                    <label>Iodine Deficiency</label>
+                    <div class="{{ 'text-malignant' if assessment.phenotype.iodine=='Yes' else 'text-benign' }}">
+                        {{ assessment.phenotype.iodine }}
+                        {% if assessment.phenotype.iodine == 'Yes' %}⚠{% else %}✓{% endif %}
+                    </div>
+                </div>
+
+                <div class="risk-card">
+                    <label>Radiation Exposure</label>
+                    <div class="{{ 'text-malignant' if assessment.phenotype.radiation=='Yes' else 'text-benign' }}">
+                        {{ assessment.phenotype.radiation }}
+                        {% if assessment.phenotype.radiation == 'Yes' %}⚠{% else %}✓{% endif %}
+                    </div>
+                </div>
+
+                <div class="risk-card">
+                    <label>Family History</label>
+                    <div
+                        class="{{ 'text-malignant' if assessment.phenotype.family_history=='Yes' else 'text-benign' }}">
+                        {{ assessment.phenotype.family_history }}
+                        {% if assessment.phenotype.family_history == 'Yes' %}⚠{% else %}✓{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clinical Risk Zone Assessment -->
+        <div class="card result-card">
+            <h2>⚕️ Clinical Risk Zone Assessment</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+                Detailed analysis of individual risk factors and their contribution to overall assessment
+            </p>
+
+            <div class="risk-grid">
+                {% for feature, risk in assessment.risk_assessment.items() %}
+                <div class="risk-card">
+                    <label>{{ feature | replace('_', ' ') | title }}</label>
+                    <div>{{ risk.value }}</div>
+                    <div class="status-{{ risk.zone.split(' ')[0] | lower }}">
+                        {% if risk.zone.split(' ')[0] | lower == 'low' %}●
+                        {% elif risk.zone.split(' ')[0] | lower == 'moderate' %}●●
+                        {% else %}●●●
+                        {% endif %}
+                        {{ risk.zone }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <a href="/" class="btn-secondary" style="flex: 1;">← New Assessment</a>
+            <button onclick="window.print()" class="btn-primary" style="flex: 1; margin-top: 0;">🖨️ Print
+                Results</button>
+        </div>
+    </div>
+
+    <script>
+        // Animate confidence bar on load
+        window.addEventListener('load', () => {
+            const fill = document.querySelector('.confidence-fill');
+            if (fill) {
+                const width = fill.style.width;
+                fill.style.width = '0%';
+                setTimeout(() => {
+                    fill.style.width = width;
+                }, 100);
+            }
+        });
+    </script>
+
+    <style>
+        @media print {
+
+            .navbar,
+            .btn-primary,
+            .btn-secondary {
+                display: none;
+            }
+
+            body {
+                background: white;
+                color: black;
+            }
+
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</body>
+
+</html>
